@@ -1,3 +1,5 @@
+import lombok.SneakyThrows;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -6,8 +8,9 @@ import java.net.Socket;
 public class MainServer implements Runnable {
 
     private static ServerSocket _listener = null;
-    //MessageHandler verwaltet Nachrichten und erstellt Antworten
-    private static final MessageHandler messageOPs = new MessageHandler();
+    //arena für Kampfaustragung
+    private static final BattleGrounds arena = new BattleGrounds();
+    //todo user logedin for Auth-Token
 
     public MainServer() {
     }
@@ -22,36 +25,51 @@ public class MainServer implements Runnable {
             return;
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(new MainServer()));
+        //Runtime.getRuntime().addShutdownHook();
 
         try {
             while (true) {
                 Socket client = _listener.accept();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-                RequestContext keySafe = new RequestContext();
-                String message;
-                StringBuilder header = new StringBuilder();
-                do {
-                    //find method, path and keypairs
-                    message = reader.readLine().trim();
-                    //KeyPairs zwischenspeichern
-                    header.append(message).append("\n");
-                    System.out.println("srv: received: " + message);
-                } while (!message.isEmpty());
-                String response;
-                if (keySafe.setHeaderLines(header.toString())) {
-                    StringBuilder content = new StringBuilder();
-                    while (reader.ready()) {
-                        content.append((char) reader.read());
+                new Thread(new MainServer()) {
+                    @SneakyThrows
+                    @Override
+                    public void run() {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
+                        RequestContext requestHeader = new RequestContext();
+                        String message;
+                        StringBuilder header = new StringBuilder();
+                        do {
+                            //find method, path and keypairs
+                            message = reader.readLine().trim();
+                            //KeyPairs zwischenspeichern
+                            header.append(message).append("\n");
+                            System.out.println("srv: received: " + message);
+                        } while (!message.isEmpty());
+                        String response;
+                        if (requestHeader.setHeaderLines(header.toString())) {
+                            StringBuilder content = new StringBuilder();
+                            while (reader.ready()) {
+                                content.append((char) reader.read());
+                            }
+                            System.out.println("Content:\n" + content + "\ncontent end");
+                            RequestHandler requestHandler = new RequestHandler(requestHeader.getMethod(),
+                                    requestHeader.getPath(), content.toString(), arena);
+                            response = requestHandler.work();
+                            //
+                            if (!requestHeader.getKeyMap().get("Content-Type").isEmpty()) {
+                                requestHandler.setAuthorisation(requestHeader.getKeyMap().get("Content-Type"));
+                            }
+                            if (!requestHeader.getKeyMap().get("Authorization").isEmpty()) {
+                                requestHandler.setContentType(requestHeader.getKeyMap().get("Authorization"));
+                            }
+                        } else
+                            response = MessageHandler.createHttpResponseMessage("400 BAD REQUEST");
+                        System.out.println("responding");
+                        writer.write(response);
+                        writer.flush();
                     }
-                    System.out.println(content + "\ncontent end");
-                    response = messageOPs.handleMessages(keySafe.getMethod(), content.toString(), keySafe.getPath());
-                } else
-                    response = MessageHandler.createHttpResponseMessage("400 BAD REQUEST");
-                System.out.println("responding");
-                writer.write(response);
-                writer.flush();
+                };
             }
         } catch (Exception e) {
             e.printStackTrace();
