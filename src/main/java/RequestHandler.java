@@ -122,6 +122,9 @@ public class RequestHandler {
                 //DB-Abfrage und Antwort
                 response = MessageHandler.createHttpResponseMessage("200", DBConnection.getUser(username));
             }
+            else {
+                response = MessageHandler.badRequest();
+            }
         }
         //get stats of single user(elo,overall pushups)
         else if (requestPath.equalsIgnoreCase("/stats")) {
