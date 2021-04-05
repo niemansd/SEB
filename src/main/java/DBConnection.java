@@ -1,3 +1,4 @@
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.sql.PreparedStatement;
@@ -114,7 +115,7 @@ public class DBConnection {
     public static String getUserStats(String username) {
         if (!username.isBlank()) {
             String query1 = "SELECT elo FROM Users WHERE username = ?";
-            String query2 = "SELECT elo FROM Users WHERE username = ?";
+            String query2 = "SELECT count FROM pushups WHERE username = ?";
             try (PreparedStatement getELO = connect().prepareStatement(query1);
                  PreparedStatement getCount = connect().prepareStatement(query2)) {
                 getELO.setString(1, username);
@@ -138,6 +139,27 @@ public class DBConnection {
 
     public static List<Map.Entry<String, int[]>> getScoreBoard() {
         //return: Username, [ELO, PushUps]
+        String query1 = "select username, elo, from users";
+        String query2 = "select sum(count) from users";
+        try (PreparedStatement userStatSelect = connect().prepareStatement(query1);
+             PreparedStatement userTotalCountSelect = connect().prepareStatement(query2)) {
+            var result = userStatSelect.executeQuery();
+            JSONArray jsonArray = new JSONArray();
+
+            while (result.next()) {
+                int columns = result.getMetaData().getColumnCount();
+                JSONObject obj = new JSONObject();
+                for (int i = 0; i < columns; i++) {
+                    obj.put(result.getMetaData().getColumnLabel(i + 1).toLowerCase(), result.getObject(i + 1));
+                }
+                userTotalCountSelect.setString(1, (String) obj.get("username"));
+                var resultCount = userTotalCountSelect.executeQuery();
+                obj.put(result.getMetaData().getColumnLabel(1).toLowerCase(), result.getObject(1));
+                jsonArray.add(obj);
+            }
+        } catch (SQLException | ClassNotFoundException throwables) {
+            throwables.printStackTrace();
+        }
         return null;
     }
 
