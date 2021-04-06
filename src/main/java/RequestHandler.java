@@ -96,8 +96,8 @@ public class RequestHandler {
                     assert jsonObj != null;
                     //JSON umwandeln "{\"Name\": \"PushUps\",  \"Count\": 40, \"DurationInSeconds\": 60}"
                     //String exerciseType = (String) jsonObj.get("Name");
-                    Integer count = (Integer) jsonObj.get("Count");
-                    Integer duration = (Integer) jsonObj.get("DurationInSeconds");
+                    Long count = (Long) jsonObj.get("Count");
+                    Long duration = (Long) jsonObj.get("DurationInSeconds");
                     if (DBHandler.addPushups(username, count, duration)) {
                         response = MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {

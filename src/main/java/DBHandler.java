@@ -120,7 +120,7 @@ public class DBHandler {
 
     }
 
-    public static boolean addPushups(String username, Integer count, Integer duration) {
+    public static boolean addPushups(String username, Long count, Long duration) {
         return false;
     }
 
