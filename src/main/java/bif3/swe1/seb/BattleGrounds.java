@@ -94,7 +94,7 @@ public class BattleGrounds {
             this.tournamentTime = LocalDateTime.now().plusMinutes(2);
             this.tournamentsStarted++;
             this.tournamentStatus = true;
-            log.add("New tournament started." + tournamentsStarted + "tournaments started since server start.\n")
+            log.add("New tournament started." + tournamentsStarted + "tournaments started since server start.\n");
         }
         this.sem.release();
 
