@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

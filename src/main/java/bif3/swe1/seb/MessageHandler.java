@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import java.nio.charset.StandardCharsets;
 
 public class MessageHandler {

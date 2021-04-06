@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +12,7 @@ public class LoginHandler {
     }
 
     public boolean loginUser(String username, String password) {
-        if (DBHandler.loginUser(username, password)) {
+        if (bif3.swe1.seb.DBHandler.loginUser(username, password)) {
             if (!userList.containsValue(username)) {
                 userList.put("Basic " + username + "-sebToken", username);
             }

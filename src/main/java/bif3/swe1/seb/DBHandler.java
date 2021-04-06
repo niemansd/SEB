@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

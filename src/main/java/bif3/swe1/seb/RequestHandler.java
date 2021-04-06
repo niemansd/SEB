@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import lombok.Setter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -15,14 +17,14 @@ public class RequestHandler {
     private String requestContent = "";
     @Setter
     private String authorisation = "";
-    private BattleGrounds arena;
+    private bif3.swe1.seb.BattleGrounds arena;
     private String response = "";
 
-    LoginHandler loginHandler;
+    bif3.swe1.seb.LoginHandler loginHandler;
 
     private JSONParser parser = new JSONParser();
 
-    RequestHandler(String rType, String rPath, String rContent, BattleGrounds mainArena, LoginHandler loginHandler) {
+    RequestHandler(String rType, String rPath, String rContent, bif3.swe1.seb.BattleGrounds mainArena, bif3.swe1.seb.LoginHandler loginHandler) {
         this.requestType = rType.trim();
         this.requestPath = rPath.trim();
         this.requestContent = rContent.trim();
@@ -43,7 +45,7 @@ public class RequestHandler {
                 get();
                 break;
             default:
-                return MessageHandler.badRequest();
+                return bif3.swe1.seb.MessageHandler.badRequest();
         }
         return response;
     }
@@ -54,7 +56,7 @@ public class RequestHandler {
         try {
             jsonObj = (JSONObject) parser.parse(requestContent);
         } catch (ParseException e) {
-            response = MessageHandler.badRequest();
+            response = bif3.swe1.seb.MessageHandler.badRequest();
         }
         //register users
         if (requestPath.equalsIgnoreCase("/users")) {
@@ -62,13 +64,13 @@ public class RequestHandler {
             if (contentType.equalsIgnoreCase("application/json")) {
                 //add user in database + create response
                 assert jsonObj != null;
-                if (DBHandler.addUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString()) != 0) {
-                    response = MessageHandler.createHttpResponseMessage("201", jsonObj.get("Username") + " added.");
+                if (bif3.swe1.seb.DBHandler.addUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString()) != 0) {
+                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201", jsonObj.get("Username") + " added.");
                 } else {
-                    response = MessageHandler.badRequest();
+                    response = bif3.swe1.seb.MessageHandler.badRequest();
                 }
             } else {
-                response = MessageHandler.badRequest();
+                response = bif3.swe1.seb.MessageHandler.badRequest();
             }
         }
         //login users
@@ -78,12 +80,12 @@ public class RequestHandler {
                 assert jsonObj != null;
                 if (loginHandler.loginUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString())) {
                     //eventuell token zurückgeben
-                    response = MessageHandler.createHttpResponseMessage("200", jsonObj.get("Username") + " login success.");
+                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", jsonObj.get("Username") + " login success.");
                 } else {
-                    response = MessageHandler.badRequest();
+                    response = bif3.swe1.seb.MessageHandler.badRequest();
                 }
             } else {
-                response = MessageHandler.badRequest();
+                response = bif3.swe1.seb.MessageHandler.badRequest();
             }
         }
         //add entry
@@ -98,17 +100,17 @@ public class RequestHandler {
                     //String exerciseType = (String) jsonObj.get("Name");
                     Long count = (Long) jsonObj.get("Count");
                     Long duration = (Long) jsonObj.get("DurationInSeconds");
-                    if (DBHandler.addPushups(username, count, duration)) {
-                        response = MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
+                    if (bif3.swe1.seb.DBHandler.addPushups(username, count, duration)) {
+                        response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {
-                        response = MessageHandler.badRequest();
+                        response = bif3.swe1.seb.MessageHandler.badRequest();
                     }
                 } else {
-                    response = MessageHandler.badRequest();
+                    response = bif3.swe1.seb.MessageHandler.badRequest();
                 }
             }
         } else {
-            response = MessageHandler.badRequest();
+            response = bif3.swe1.seb.MessageHandler.badRequest();
         }
     }
 
@@ -119,9 +121,9 @@ public class RequestHandler {
             //check authorisation "Authorization: Basic kienboec-sebToken"
             if (username == loginHandler.getAuthorizedUser(authorisation)) {
                 //DB-Abfrage und Antwort
-                response = MessageHandler.createHttpResponseMessage("200", DBHandler.getUser(username));
+                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", bif3.swe1.seb.DBHandler.getUser(username));
             } else {
-                response = MessageHandler.badRequest();
+                response = bif3.swe1.seb.MessageHandler.badRequest();
             }
         }
         //get stats of single user(elo,overall pushups)
@@ -131,8 +133,8 @@ public class RequestHandler {
             if (loginHandler.getAuthStatus(authorisation)) {
                 String username = loginHandler.getAuthorizedUser(authorisation);
                 //DB Abfrage: elo, total pushups
-                response = DBHandler.getUserStats(username);
-            } else response = MessageHandler.badRequest();
+                response = bif3.swe1.seb.DBHandler.getUserStats(username);
+            } else response = bif3.swe1.seb.MessageHandler.badRequest();
         }
         //get scoreboard of all users
         else if (requestPath.equalsIgnoreCase("/score")) {
@@ -141,7 +143,7 @@ public class RequestHandler {
 
             //return scoreboard
             JSONArray scoreBoard = new JSONArray();
-            JSONArray scores = DBHandler.getScoreBoard();
+            JSONArray scores = bif3.swe1.seb.DBHandler.getScoreBoard();
             if (scores != null) {
                 scoreBoard = scores;
             }
@@ -153,7 +155,7 @@ public class RequestHandler {
             //todo check Auth-Token
             String username = loginHandler.getAuthorizedUser(authorisation);
             JSONArray history = new JSONArray();
-            List<int[]> entries = DBHandler.getUserHistory(username);
+            List<int[]> entries = bif3.swe1.seb.DBHandler.getUserHistory(username);
             if (entries != null) {
                 for (int[] entry : entries) {
                     JSONObject jEntry = new JSONObject();
@@ -168,9 +170,9 @@ public class RequestHandler {
         else if (requestPath.equalsIgnoreCase("/tournament") && loginHandler.getAuthStatus(authorisation)) {
             //GET http://localhost:10001/tournament --header "Authorization: Basic kienboec-sebToken"
             //needs BattleGrounds
-            response = MessageHandler.createHttpResponseMessage("200", arena.getStatus());
+            response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", arena.getStatus());
         } else {
-            response = MessageHandler.badRequest();
+            response = bif3.swe1.seb.MessageHandler.badRequest();
         }
     }
 
@@ -183,13 +185,13 @@ public class RequestHandler {
             try {
                 jsonObj = (JSONObject) parser.parse(requestContent);
             } catch (ParseException e) {
-                response = MessageHandler.badRequest();
+                response = bif3.swe1.seb.MessageHandler.badRequest();
             }
-            if (DBHandler.changeProfile(loginHandler.getAuthorizedUser(authorisation), jsonObj.get("Name").toString(), jsonObj.get("Bio").toString(), jsonObj.get("Image").toString())) {
-                response = MessageHandler.createHttpResponseMessage("200");
+            if (bif3.swe1.seb.DBHandler.changeProfile(loginHandler.getAuthorizedUser(authorisation), jsonObj.get("Name").toString(), jsonObj.get("Bio").toString(), jsonObj.get("Image").toString())) {
+                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200");
             }
         } else {
-            response = MessageHandler.badRequest();
+            response = bif3.swe1.seb.MessageHandler.badRequest();
         }
     }
 }

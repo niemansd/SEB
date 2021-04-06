@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;

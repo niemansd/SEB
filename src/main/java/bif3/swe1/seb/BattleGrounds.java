@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -10,6 +12,7 @@ public class BattleGrounds {
     private LocalDateTime tournamentTime = LocalDateTime.now();
     private String lastLeader;
     private Integer tournamentsStarted;
+    private boolean tournamentStatus = false;
     private final Semaphore sem = new Semaphore(1);
 
     public BattleGrounds() {
@@ -24,14 +27,14 @@ public class BattleGrounds {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (tournamentTime.isBefore(LocalDateTime.now())) {
+        if (tournamentTime.isAfter(LocalDateTime.now())) {
             int participants = tournamentList.size();
             setLeader();
             sem.release();
-            return this.lastLeader + " leads with " + tournamentList.get(lastLeader) + " push-ups.";
+            return "Tournament running, " + participants + " participant(s). " + this.lastLeader + " leads with " + tournamentList.get(lastLeader) + " push-ups.";
         }
-        String returnString = tournamentsStarted + " tournaments played.";
-        if (lastLeader != "") {
+        String returnString = tournamentsStarted + " tournament(s) played.";
+        if (!lastLeader.equals("")) {
             returnString += " " + lastLeader + " won the last one";
         }
         sem.release();
@@ -40,17 +43,17 @@ public class BattleGrounds {
 
     private void setLeader() {
         var entries = tournamentList.entrySet();
-        String leading = "";
+        StringBuilder leading = new StringBuilder();
         int max = Integer.MIN_VALUE;
         for (Map.Entry<String, Integer> entry : entries) {
             if (entry.getValue().intValue() > max) {
                 max = entry.getValue();
-                leading = entry.getKey();
+                leading = new StringBuilder(entry.getKey());
             } else if (entry.getValue().intValue() == max) {
-                leading += " tied with " + entry.getKey();
+                leading.append(" tied with ").append(entry.getKey());
             }
         }
-        this.lastLeader = leading;
+        this.lastLeader = leading.toString();
     }
 
     //pushups hinzufügen
@@ -60,14 +63,15 @@ public class BattleGrounds {
             startTournament();
         }
         //enter tournament
-        if (!tournamentList.containsKey(username)) {
-            tournamentList.put(username, pushups);
-        }
-        //add pushups to entry
-        else {
+        if (tournamentList.containsKey(username)) {
             Integer allPushups = tournamentList.get(username) + pushups;
             tournamentList.replace(username, allPushups);
         }
+        //add pushups to entry
+        else {
+            tournamentList.put(username, pushups);
+        }
+
     }
 
     //start tournament
@@ -82,6 +86,7 @@ public class BattleGrounds {
             this.setLeader();
             this.tournamentTime = LocalDateTime.now().plusMinutes(2);
             this.tournamentsStarted++;
+            this.tournamentStatus = true;
         }
         this.sem.release();
 
@@ -91,9 +96,13 @@ public class BattleGrounds {
     private void endTournament() {
         if (!tournamentList.isEmpty()) {
             var tournamentEndList = tournamentList.entrySet();
-            DBHandler.battleUpdate(tournamentEndList);
+            bif3.swe1.seb.DBHandler.battleUpdate(tournamentEndList);
             tournamentList.clear();
         }
+    }
+
+    protected void finalize() {
+        endTournament();
     }
 
 

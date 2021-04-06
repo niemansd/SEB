@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,9 +9,9 @@ public class MainServer implements Runnable {
 
     private static ServerSocket _listener = null;
     //arena für Kampfaustragung
-    private static final BattleGrounds arena = new BattleGrounds();
+    private static final bif3.swe1.seb.BattleGrounds arena = new bif3.swe1.seb.BattleGrounds();
     //todo user logedin for Auth-Token
-    private static final LoginHandler loginHandler = new LoginHandler();
+    private static final bif3.swe1.seb.LoginHandler loginHandler = new bif3.swe1.seb.LoginHandler();
 
     public MainServer() {
     }
