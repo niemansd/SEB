@@ -1,4 +1,3 @@
-import lombok.SneakyThrows;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,51 +23,49 @@ public class MainServer implements Runnable {
             return;
         }
 
-        //Runtime.getRuntime().addShutdownHook();
+        Runtime.getRuntime().addShutdownHook(new Thread(new MainServer()));
 
         try {
             while (true) {
                 Socket client = _listener.accept();
-                new Thread(new MainServer()) {
-                    @SneakyThrows
-                    @Override
-                    public void run() {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-                        RequestContext requestHeader = new RequestContext();
-                        String message;
-                        StringBuilder header = new StringBuilder();
-                        do {
-                            //find method, path and keypairs
-                            message = reader.readLine().trim();
-                            //KeyPairs zwischenspeichern
-                            header.append(message).append("\n");
-                            System.out.println("srv: received: " + message);
-                        } while (!message.isEmpty());
-                        String response;
-                        if (requestHeader.setHeaderLines(header.toString())) {
-                            StringBuilder content = new StringBuilder();
-                            while (reader.ready()) {
-                                content.append((char) reader.read());
-                            }
-                            System.out.println("Content:\n" + content + "\ncontent end");
-                            RequestHandler requestHandler = new RequestHandler(requestHeader.getMethod(),
-                                    requestHeader.getPath(), content.toString(), arena);
-                            response = requestHandler.work();
-                            //
-                            if (!requestHeader.getKeyMap().get("Content-Type").isEmpty()) {
-                                requestHandler.setAuthorisation(requestHeader.getKeyMap().get("Content-Type"));
-                            }
-                            if (!requestHeader.getKeyMap().get("Authorization").isEmpty()) {
-                                requestHandler.setContentType(requestHeader.getKeyMap().get("Authorization"));
-                            }
-                        } else
-                            response = MessageHandler.createHttpResponseMessage("400 BAD REQUEST");
-                        System.out.println("responding");
-                        writer.write(response);
-                        writer.flush();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
+                RequestContext requestHeader = new RequestContext();
+                String message;
+                StringBuilder header = new StringBuilder();
+                do {
+                    //find method, path and keypairs
+                    message = reader.readLine().trim();
+                    //KeyPairs zwischenspeichern
+                    header.append(message).append("\n");
+                    System.out.println("srv: received: " + message);
+                } while (!message.isEmpty());
+                String response = "";
+                if (requestHeader.setHeaderLines(header.toString())) {
+                    StringBuilder content = new StringBuilder();
+                    while (reader.ready()) {
+                        content.append((char) reader.read());
                     }
-                };
+                    System.out.println("Content:\n" + content + "\ncontent end");
+                    RequestHandler requestHandler = new RequestHandler(requestHeader.getMethod(),
+                            requestHeader.getPath(), content.toString(), arena);
+                    if (requestHeader.getKeyMap().containsKey("authorization")) {
+                        requestHandler.setAuthorisation(requestHeader.getKeyMap().get("authorization"));
+                    }
+                    if (requestHeader.getKeyMap().containsKey("content-type")) {
+                        requestHandler.setContentType(requestHeader.getKeyMap().get("content-type"));
+                    }
+                    response = requestHandler.work();
+                    //
+                } else
+                    response = MessageHandler.createHttpResponseMessage("400 BAD REQUEST");
+                System.out.println("responding:");
+                System.out.println(response);
+                System.out.println("");
+                writer.write(response);
+                writer.flush();
+
             }
         } catch (Exception e) {
             e.printStackTrace();

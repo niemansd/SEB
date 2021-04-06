@@ -1,6 +1,8 @@
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -10,8 +12,8 @@ import java.util.Set;
 public class DBConnection {
     //TODO
     //  connect
-    private static java.sql.Connection connect()
-            throws ClassNotFoundException, java.sql.SQLException {
+    private static Connection connect()
+            throws ClassNotFoundException, SQLException {
         /*
          * Register the PostgreSQL JDBC driver.
          * This may throw a ClassNotFoundException.
@@ -21,7 +23,7 @@ public class DBConnection {
          * Tell the driver manager to connect to the database specified with the URL.
          * This may throw an SQLException.
          */
-        return java.sql.DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "test");
+        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/SEB", "postgres", "test");
     }
 
     //  User anlegen

@@ -9,15 +9,15 @@ import java.util.Map;
 
 public class RequestHandler {
     //private String requestUser = null;
-    private String requestType;
+    private String requestType = "";
     @Setter
-    private String contentType;
-    private String requestPath;
-    private String requestContent;
+    private String contentType = "";
+    private String requestPath = "";
+    private String requestContent = "";
     @Setter
-    private String authorisation;
+    private String authorisation = "";
     private BattleGrounds arena;
-    private String response = null;
+    private String response = "";
 
     private JSONParser parser = new JSONParser();
 
@@ -50,7 +50,7 @@ public class RequestHandler {
 
     private void post() {
         //read JSON
-        JSONObject jsonObj = null;
+        JSONObject jsonObj = new JSONObject();
         try {
             jsonObj = (JSONObject) parser.parse(requestContent);
         } catch (ParseException e) {
@@ -121,8 +121,7 @@ public class RequestHandler {
             if (this.authorisation.trim().equals(token.trim())) {
                 //DB-Abfrage und Antwort
                 response = MessageHandler.createHttpResponseMessage("200", DBConnection.getUser(username));
-            }
-            else {
+            } else {
                 response = MessageHandler.badRequest();
             }
         }
