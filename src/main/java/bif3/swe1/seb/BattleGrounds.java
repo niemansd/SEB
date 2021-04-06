@@ -1,6 +1,8 @@
 package bif3.swe1.seb;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Semaphore;
@@ -14,6 +16,7 @@ public class BattleGrounds {
     private Integer tournamentsStarted;
     private boolean tournamentStatus = false;
     private final Semaphore sem = new Semaphore(1);
+    private List<String> log = new ArrayList<>();
 
     public BattleGrounds() {
         lastLeader = "";
@@ -32,6 +35,9 @@ public class BattleGrounds {
             setLeader();
             sem.release();
             return "Tournament running, " + participants + " participant(s). " + this.lastLeader + " leads with " + tournamentList.get(lastLeader) + " push-ups.";
+        }
+        if (tournamentStatus && tournamentTime.isBefore(LocalDateTime.now())) {
+            endTournament();
         }
         String returnString = tournamentsStarted + " tournament(s) played.";
         if (!lastLeader.equals("")) {
@@ -71,6 +77,7 @@ public class BattleGrounds {
         else {
             tournamentList.put(username, pushups);
         }
+        log.add(username + " entered " + pushups + " pushups.\n");
 
     }
 
@@ -87,6 +94,7 @@ public class BattleGrounds {
             this.tournamentTime = LocalDateTime.now().plusMinutes(2);
             this.tournamentsStarted++;
             this.tournamentStatus = true;
+            log.add("New tournament started." + tournamentsStarted + "tournaments started since server start.\n")
         }
         this.sem.release();
 
@@ -94,10 +102,19 @@ public class BattleGrounds {
 
     //end tournament
     private void endTournament() {
-        if (!tournamentList.isEmpty()) {
-            var tournamentEndList = tournamentList.entrySet();
-            bif3.swe1.seb.DBHandler.battleUpdate(tournamentEndList);
-            tournamentList.clear();
+        try {
+            sem.acquire();
+            if (!tournamentList.isEmpty()) {
+                var tournamentEndList = tournamentList.entrySet();
+                bif3.swe1.seb.DBHandler.battleUpdate(tournamentEndList);
+                log.add("Tournament ended.\n");
+                log.add(lastLeader + "won the tournament\n");
+                tournamentList.clear();
+                System.out.println(log.toString());
+                log.clear();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

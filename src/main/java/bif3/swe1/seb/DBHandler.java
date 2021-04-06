@@ -54,10 +54,12 @@ public class DBHandler {
                 login.setString(1, username);
                 login.setString(2, password);
                 var resultSet = login.executeQuery();
-                resultSet.next();
-                String dbPW = resultSet.getString("password");
-                connect().close();
-                return dbPW.equals(password);
+                //check if row returned
+                if (resultSet.next()) {
+                    String dbPW = resultSet.getString("password");
+                    connect().close();
+                    return dbPW.equals(password);
+                }
             } catch (SQLException | ClassNotFoundException throwables) {
                 throwables.printStackTrace();
             }
@@ -139,10 +141,9 @@ public class DBHandler {
             }
         }
         for (String username : leader) {
-            String query = "UPDATE Users SET elo = elo + ? where username = ?";
+            String query = "UPDATE Users SET elo = elo + 2 where username = ?";
             try (PreparedStatement updateELO = connect().prepareStatement(query)) {
-                updateELO.setInt(1, 2);
-                updateELO.setString(2, username);
+                updateELO.setString(1, username);
                 updateELO.executeUpdate();
                 connect().close();
             } catch (SQLException | ClassNotFoundException throwables) {
@@ -150,10 +151,9 @@ public class DBHandler {
             }
         }
         for (String username : losers) {
-            String query = "UPDATE Users SET elo = elo - ? where username = ?";
+            String query = "UPDATE Users SET elo = elo - 1 where username = ?";
             try (PreparedStatement updateELO = connect().prepareStatement(query)) {
-                updateELO.setInt(1, 2);
-                updateELO.setString(2, username);
+                updateELO.setString(1, username);
                 updateELO.executeUpdate();
                 connect().close();
             } catch (SQLException | ClassNotFoundException throwables) {
@@ -204,13 +204,12 @@ public class DBHandler {
 
     public static JSONArray getScoreBoard() {
         //return: Username, [ELO, PushUps]
-        String query1 = "select username, elo, from users";
-        String query2 = "select sum(count) from users";
+        String query1 = "SELECT username, elo FROM users";
+        String query2 = "SELECT sum(count) FROM pushups WHERE username = ?";
         try (PreparedStatement userStatSelect = connect().prepareStatement(query1);
              PreparedStatement userTotalCountSelect = connect().prepareStatement(query2)) {
             var result = userStatSelect.executeQuery();
             JSONArray jsonArray = new JSONArray();
-
             while (result.next()) {
                 int columns = result.getMetaData().getColumnCount();
                 JSONObject obj = new JSONObject();
