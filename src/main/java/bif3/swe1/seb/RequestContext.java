@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import lombok.Getter;
 import lombok.Setter;
 

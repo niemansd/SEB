@@ -1,0 +1,7 @@
+path to github:
+https://github.com/niemansd/SEB.git
+
+arbeitszeit ca 45h
+(ohne zeit des zuvor bestehenden REST-Servers)
+
+

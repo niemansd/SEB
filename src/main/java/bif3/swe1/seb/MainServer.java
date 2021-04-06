@@ -1,3 +1,5 @@
+package bif3.swe1.seb;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -6,8 +8,10 @@ import java.net.Socket;
 public class MainServer implements Runnable {
 
     private static ServerSocket _listener = null;
-    //MessageHandler verwaltet Nachrichten und erstellt Antworten
-    private static final MessageHandler messageOPs = new MessageHandler();
+    //arena für Kampfaustragung
+    private static final bif3.swe1.seb.BattleGrounds arena = new bif3.swe1.seb.BattleGrounds();
+    //todo user logedin for Auth-Token
+    private static final bif3.swe1.seb.LoginHandler loginHandler = new bif3.swe1.seb.LoginHandler();
 
     public MainServer() {
     }
@@ -27,9 +31,10 @@ public class MainServer implements Runnable {
         try {
             while (true) {
                 Socket client = _listener.accept();
+
                 BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-                RequestContext keySafe = new RequestContext();
+                RequestContext requestHeader = new RequestContext();
                 String message;
                 StringBuilder header = new StringBuilder();
                 do {
@@ -39,19 +44,33 @@ public class MainServer implements Runnable {
                     header.append(message).append("\n");
                     System.out.println("srv: received: " + message);
                 } while (!message.isEmpty());
-                String response;
-                if (keySafe.setHeaderLines(header.toString())) {
+                String response = "";
+                if (requestHeader.setHeaderLines(header.toString())) {
                     StringBuilder content = new StringBuilder();
                     while (reader.ready()) {
                         content.append((char) reader.read());
                     }
-                    System.out.println(content + "\ncontent end");
-                    response = messageOPs.handleMessages(keySafe.getMethod(), content.toString(), keySafe.getPath());
+                    System.out.println("Content:\n" + content + "\ncontent end");
+                    RequestHandler requestHandler = new RequestHandler(requestHeader.getMethod(),
+                            requestHeader.getPath(), content.toString(), arena, loginHandler);
+                    if (requestHeader.getKeyMap().containsKey("authorization")) {
+                        requestHandler.setAuthorisation(requestHeader.getKeyMap().get("authorization"));
+                    }
+                    if (requestHeader.getKeyMap().containsKey("content-type")) {
+                        requestHandler.setContentType(requestHeader.getKeyMap().get("content-type"));
+                    }
+                    response = requestHandler.work();
+                    //
                 } else
                     response = MessageHandler.createHttpResponseMessage("400 BAD REQUEST");
-                System.out.println("responding");
+                System.out.println("responding:");
+                System.out.println(response);
+                System.out.println("");
                 writer.write(response);
                 writer.flush();
+                reader.close();
+                writer.close();
+
             }
         } catch (Exception e) {
             e.printStackTrace();
