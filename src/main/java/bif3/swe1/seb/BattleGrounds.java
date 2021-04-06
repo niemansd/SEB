@@ -113,6 +113,7 @@ public class BattleGrounds {
                 System.out.println(log.toString());
                 log.clear();
             }
+            sem.release();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
