@@ -102,20 +102,14 @@ public class BattleGrounds {
 
     //end tournament
     private void endTournament() {
-        try {
-            sem.acquire();
-            if (!tournamentList.isEmpty()) {
-                var tournamentEndList = tournamentList.entrySet();
-                bif3.swe1.seb.DBHandler.battleUpdate(tournamentEndList);
-                log.add("Tournament ended.\n");
-                log.add(lastLeader + "won the tournament\n");
-                tournamentList.clear();
-                System.out.println(log.toString());
-                log.clear();
-            }
-            sem.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (!tournamentList.isEmpty()) {
+            var tournamentEndList = tournamentList.entrySet();
+            bif3.swe1.seb.DBHandler.battleUpdate(tournamentEndList);
+            log.add("Tournament ended.\n");
+            log.add(lastLeader + "won the tournament\n");
+            tournamentList.clear();
+            System.out.println(log.toString());
+            log.clear();
         }
     }
 
