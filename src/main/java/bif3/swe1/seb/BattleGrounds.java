@@ -9,7 +9,7 @@ public class BattleGrounds {
     //teilnehmerliste username+score
     private static final ConcurrentSkipListMap<String, Integer> tournamentList = new ConcurrentSkipListMap<>();
     //startzeit/endzeit
-    private LocalDateTime tournamentTime = LocalDateTime.now();
+    private LocalDateTime tournamentTime = LocalDateTime.now().minusMinutes(2);
     private String lastLeader;
     private Integer tournamentsStarted;
     private boolean tournamentStatus = false;

@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -119,11 +121,60 @@ public class DBHandler {
 
     //  Ergebnisse speichern
     public static void battleUpdate(Set<Map.Entry<String, Integer>> tournamentEndList) {
+        List<String> leader = new ArrayList<>();
+        List<String> losers = new ArrayList<>();
+        Integer maximum = 0;
+        for (Map.Entry<String, Integer> stringIntegerEntry : tournamentEndList) {
 
+            if (stringIntegerEntry.getValue() > maximum) {
+                for (String member : leader) {
+                    losers.add(member);
+                    leader.remove(member);
+                }
+                leader.add(stringIntegerEntry.getKey());
+            } else if (stringIntegerEntry.getValue() == maximum) {
+                leader.add(stringIntegerEntry.getKey());
+            } else {
+                losers.add(stringIntegerEntry.getKey());
+            }
+        }
+        for (String username : leader) {
+            String query = "UPDATE Users SET elo = elo + ? where username = ?";
+            try (PreparedStatement updateELO = connect().prepareStatement(query)) {
+                updateELO.setInt(1, 2);
+                updateELO.setString(2, username);
+                updateELO.executeUpdate();
+                connect().close();
+            } catch (SQLException | ClassNotFoundException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        for (String username : losers) {
+            String query = "UPDATE Users SET elo = elo - ? where username = ?";
+            try (PreparedStatement updateELO = connect().prepareStatement(query)) {
+                updateELO.setInt(1, 2);
+                updateELO.setString(2, username);
+                updateELO.executeUpdate();
+                connect().close();
+            } catch (SQLException | ClassNotFoundException throwables) {
+                throwables.printStackTrace();
+            }
+        }
     }
 
-    public static boolean addPushups(String username, Long count, Long duration) {
-        return false;
+    public static int addPushups(String username, Long count, Long duration) {
+        String query = "INSERT INTO pushups (username, count, duration) VALUES (?, ?, ?)";
+        try (PreparedStatement addPushUps = connect().prepareStatement(query)) {
+            addPushUps.setString(1, username);
+            addPushUps.setLong(2, count);
+            addPushUps.setLong(3, duration);
+            int returnValue = addPushUps.executeUpdate();
+            connect().close();
+            return returnValue;
+        } catch (SQLException | ClassNotFoundException throwables) {
+            throwables.printStackTrace();
+        }
+        return 0;
     }
 
     public static String getUserStats(String username) {
@@ -180,7 +231,27 @@ public class DBHandler {
     }
 
     public static JSONArray getUserHistory(String username) {
-        //return format [pushups, duration]
-        return null;
+        //return [pushups, duration]
+        JSONArray history = new JSONArray();
+        if (!username.isBlank()) {
+            String query = "SELECT count, duration FROM pushups WHERE username = ?";
+            try (PreparedStatement getHistory = connect().prepareStatement(query)) {
+                getHistory.setString(1, username);
+                var result = getHistory.executeQuery();
+                while (result.next()) {
+                    int columns = result.getMetaData().getColumnCount();
+                    JSONObject jResObj = new JSONObject();
+                    for (int i = 0; i < columns; i++) {
+                        jResObj.put(result.getMetaData().getColumnLabel(i + 1).toLowerCase(), result.getObject(i + 1));
+                    }
+                    history.add(jResObj);
+                }
+                connect().close();
+                return history;
+            } catch (SQLException | ClassNotFoundException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        return history;
     }
 }

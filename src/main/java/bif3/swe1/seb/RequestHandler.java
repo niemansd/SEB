@@ -6,8 +6,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.util.List;
-
 public class RequestHandler {
     //private String requestUser = null;
     private String requestType = "";
@@ -19,8 +17,7 @@ public class RequestHandler {
     private String authorisation = "";
     private bif3.swe1.seb.BattleGrounds arena;
     private String response = "";
-
-    bif3.swe1.seb.LoginHandler loginHandler;
+    private bif3.swe1.seb.LoginHandler loginHandler;
 
     private JSONParser parser = new JSONParser();
 
@@ -100,7 +97,7 @@ public class RequestHandler {
                     //String exerciseType = (String) jsonObj.get("Name");
                     Long count = (Long) jsonObj.get("Count");
                     Long duration = (Long) jsonObj.get("DurationInSeconds");
-                    if (bif3.swe1.seb.DBHandler.addPushups(username, count, duration)) {
+                    if (bif3.swe1.seb.DBHandler.addPushups(username, count, duration) != 0) {
                         response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {
                         response = bif3.swe1.seb.MessageHandler.badRequest();
@@ -155,15 +152,7 @@ public class RequestHandler {
             //todo check Auth-Token
             String username = loginHandler.getAuthorizedUser(authorisation);
             JSONArray history = new JSONArray();
-            List<int[]> entries = bif3.swe1.seb.DBHandler.getUserHistory(username);
-            if (entries != null) {
-                for (int[] entry : entries) {
-                    JSONObject jEntry = new JSONObject();
-                    jEntry.put("Push-Ups", entry[0]);
-                    jEntry.put("duration", entry[1]);
-                    history.add(jEntry);
-                }
-            }
+            history = bif3.swe1.seb.DBHandler.getUserHistory(username);
             response = history.toJSONString();
         }
         //get tournament status

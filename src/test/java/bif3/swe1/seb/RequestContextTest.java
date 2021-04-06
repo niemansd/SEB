@@ -44,9 +44,9 @@ class RequestContextTest {
         Assertions.assertEquals("/test", testCorrectInput.getPath());
         Assertions.assertEquals("POST", testCorrectInput.getMethod());
         Assertions.assertEquals("HTTP/1.1", testCorrectInput.getProtocol());
-        Assertions.assertEquals(null, testERR2.getPath());
-        Assertions.assertEquals(null, testERR2.getMethod());
-        Assertions.assertEquals(null, testERR2.getProtocol());
+        Assertions.assertNull(testERR2.getPath());
+        Assertions.assertNull(testERR2.getMethod());
+        Assertions.assertNull(testERR2.getProtocol());
         Assertions.assertEquals("ERR", testERR.getPath());
         Assertions.assertEquals("ERR", testERR.getMethod());
         Assertions.assertEquals("ERR", testERR.getProtocol());
