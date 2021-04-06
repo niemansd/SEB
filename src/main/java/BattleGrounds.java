@@ -8,17 +8,34 @@ public class BattleGrounds {
     private static final ConcurrentSkipListMap<String, Integer> tournamentList = new ConcurrentSkipListMap<>();
     //startzeit/endzeit
     private LocalDateTime tournamentTime = LocalDateTime.now();
-    private String lastLeader = "";
-    private Integer tournamentsStarted = 0;
+    private String lastLeader;
+    private Integer tournamentsStarted;
     private final Semaphore sem = new Semaphore(1);
 
+    public BattleGrounds() {
+        lastLeader = "";
+        tournamentsStarted = 0;
+        tournamentList.clear();
+    }
+
     public String getStatus() {
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (tournamentTime.isBefore(LocalDateTime.now())) {
             int participants = tournamentList.size();
             setLeader();
-            return this.lastLeader + " leads with " + participants + " push-ups.";
+            sem.release();
+            return this.lastLeader + " leads with " + tournamentList.get(lastLeader) + " push-ups.";
         }
-        return tournamentsStarted + " tournaments played. " + lastLeader + " won the last one";
+        String returnString = tournamentsStarted + " tournaments played.";
+        if (lastLeader != "") {
+            returnString += " " + lastLeader + " won the last one";
+        }
+        sem.release();
+        return returnString;
     }
 
     private void setLeader() {

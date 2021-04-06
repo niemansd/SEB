@@ -9,12 +9,12 @@ class LoginHandlerTest {
     //test valid Login
     @Test
     void loginUserTestValid() {
-        //setup
+        //Arrange
         LoginHandler testHandler = new LoginHandler();
         try (MockedStatic<DBHandler> mock = Mockito.mockStatic(DBHandler.class)) {
             mock.when(() -> DBHandler.loginUser("true", "pwd"))
                     .thenReturn(true);
-            //assert
+            //Act + Assert
             assertTrue(testHandler.loginUser("true", "pwd"));
         }
     }
@@ -22,12 +22,12 @@ class LoginHandlerTest {
     //test invalid login
     @Test
     void loginUserTestFail() {
-        //setup
+        //Arrange
         LoginHandler testHandler = new LoginHandler();
         try (MockedStatic<DBHandler> mock = Mockito.mockStatic(DBHandler.class)) {
             mock.when(() -> DBHandler.loginUser("true", "pwd"))
                     .thenReturn(true);
-            //assert
+            //Act + Assert
             assertFalse(testHandler.loginUser("true", "pwds"));
             assertFalse(testHandler.loginUser("false", "pwd"));
         }
@@ -36,16 +36,16 @@ class LoginHandlerTest {
     //get logged in user
     @Test
     void getAuthorizedUserTestValid() {
-        //setup
+        //Arrange
         LoginHandler testHandler = new LoginHandler();
         try (MockedStatic<DBHandler> mock = Mockito.mockStatic(DBHandler.class)) {
             mock.when(() -> DBHandler.loginUser("true", "pwd"))
                     .thenReturn(true);
             testHandler.loginUser("true", "pwd");
-
+            //Act
             String test1 = testHandler.getAuthorizedUser("Basic true-sebToken");
             boolean test2 = testHandler.getAuthStatus("Basic true-sebToken");
-            //assert
+            //Assert
             assertTrue(test2);
             assertEquals("true", test1);
         }
@@ -54,16 +54,16 @@ class LoginHandlerTest {
     //user not logged in
     @Test
     void getAuthorizedUserTestFail() {
-        //setup
+        //Arrange
         LoginHandler testHandler = new LoginHandler();
         try (MockedStatic<DBHandler> mock = Mockito.mockStatic(DBHandler.class)) {
             mock.when(() -> DBHandler.loginUser("true", "pwd"))
                     .thenReturn(true);
             testHandler.loginUser("true", "pwd");
-
+            //Act
             String test1 = testHandler.getAuthorizedUser("Basic false-sebToken");
             boolean test2 = testHandler.getAuthStatus("Basic false-sebToken");
-            //assert
+            //Assert
             assertFalse(test2);
             assertNull(test1);
         }
