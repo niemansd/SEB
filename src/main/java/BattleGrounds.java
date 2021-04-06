@@ -55,18 +55,18 @@ public class BattleGrounds {
 
     //start tournament
     public void startTournament() {
+        try {
+            this.sem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (tournamentTime.isBefore(LocalDateTime.now())) {
-            try {
-                this.sem.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             this.endTournament();
             this.setLeader();
             this.tournamentTime = LocalDateTime.now().plusMinutes(2);
             this.tournamentsStarted++;
-            this.sem.release();
         }
+        this.sem.release();
 
     }
 
@@ -74,7 +74,7 @@ public class BattleGrounds {
     private void endTournament() {
         if (!tournamentList.isEmpty()) {
             var tournamentEndList = tournamentList.entrySet();
-            DBConnection.battleUpdate(tournamentEndList);
+            DBHandler.battleUpdate(tournamentEndList);
             tournamentList.clear();
         }
     }

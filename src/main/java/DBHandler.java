@@ -5,11 +5,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DBConnection {
+public class DBHandler {
     //TODO
     //  connect
     private static Connection connect()
@@ -23,22 +22,24 @@ public class DBConnection {
          * Tell the driver manager to connect to the database specified with the URL.
          * This may throw an SQLException.
          */
-        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/SEB", "postgres", "test");
+        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "test");
     }
 
     //  User anlegen
-    public static boolean addUser(String username, String password) {
+    public static int addUser(String username, String password) {
         if (!username.isBlank() && !password.isBlank()) {
             String query = "INSERT INTO users (username, password) VALUES (?, ?)";
             try (PreparedStatement insertUser = connect().prepareStatement(query)) {
                 insertUser.setString(1, username);
                 insertUser.setString(2, password);
-                return insertUser.execute();
+                int returnValue = insertUser.executeUpdate();
+                connect().close();
+                return returnValue;
             } catch (SQLException | ClassNotFoundException throwables) {
                 throwables.printStackTrace();
             }
         }
-        return false;
+        return 0;
     }
 
     //  Login
@@ -49,7 +50,10 @@ public class DBConnection {
                 login.setString(1, username);
                 login.setString(2, password);
                 var resultSet = login.executeQuery();
-                return resultSet.getString("password").equals(password);
+                resultSet.next();
+                String dbPW = resultSet.getString("password");
+                connect().close();
+                return dbPW.equals(password);
             } catch (SQLException | ClassNotFoundException throwables) {
                 throwables.printStackTrace();
             }
@@ -64,17 +68,21 @@ public class DBConnection {
     }
 
     //  Profil ändern
-    public static boolean changeProfile(String username, String bio, String image) {
-        if (!username.isBlank()) {
-            String query = "UPDATE Users SET bio = ?, image = ? WHERE username = ?";
-            try (PreparedStatement changeProfile = connect().prepareStatement(query)) {
-                changeProfile.setString(1, bio);
-                changeProfile.setString(2, image);
-                changeProfile.setString(3, username);
-                var result = changeProfile.executeUpdate();
-                return result > 1;
-            } catch (SQLException | ClassNotFoundException throwables) {
-                throwables.printStackTrace();
+    public static boolean changeProfile(String username, String name, String bio, String image) {
+        if (username != null) {
+            if (!username.isBlank()) {
+                String query = "UPDATE Users SET name = ?, bio = ?, image = ? WHERE username = ?";
+                try (PreparedStatement changeProfile = connect().prepareStatement(query)) {
+                    changeProfile.setString(1, name);
+                    changeProfile.setString(2, bio);
+                    changeProfile.setString(3, image);
+                    changeProfile.setString(4, username);
+                    var result = changeProfile.executeUpdate();
+                    connect().close();
+                    return result == 1;
+                } catch (SQLException | ClassNotFoundException throwables) {
+                    throwables.printStackTrace();
+                }
             }
         }
         return false;
@@ -88,10 +96,12 @@ public class DBConnection {
                 changeProfile.setString(1, username);
                 var result = changeProfile.executeQuery();
                 JSONObject jResObj = new JSONObject();
+                result.next();
                 int columns = result.getMetaData().getColumnCount();
                 for (int i = 0; i < columns; i++) {
                     jResObj.put(result.getMetaData().getColumnLabel(i + 1).toLowerCase(), result.getObject(i + 1));
                 }
+                connect().close();
                 return MessageHandler.createHttpResponseMessage("200", jResObj.toJSONString());
             } catch (SQLException | ClassNotFoundException throwables) {
                 throwables.printStackTrace();
@@ -115,31 +125,31 @@ public class DBConnection {
     }
 
     public static String getUserStats(String username) {
-        if (!username.isBlank()) {
-            String query1 = "SELECT elo FROM Users WHERE username = ?";
-            String query2 = "SELECT count FROM pushups WHERE username = ?";
-            try (PreparedStatement getELO = connect().prepareStatement(query1);
-                 PreparedStatement getCount = connect().prepareStatement(query2)) {
-                getELO.setString(1, username);
-                getCount.setString(1, username);
-                var result = getELO.executeQuery();
-                JSONObject jResObj = new JSONObject();
-                jResObj.put(result.getMetaData().getColumnLabel(1).toLowerCase(), result.getObject(1));
-                result = getCount.executeQuery();
-                Integer pushupCount = null;
-                while (result.next()) {
-                    pushupCount += result.getInt("count");
-                }
-                jResObj.put("Push-Up count", result);
-                return MessageHandler.createHttpResponseMessage("200", jResObj.toJSONString());
-            } catch (SQLException | ClassNotFoundException throwables) {
-                throwables.printStackTrace();
+        String query1 = "SELECT elo FROM Users WHERE username = ?";
+        String query2 = "SELECT count FROM pushups WHERE username = ?";
+        try (PreparedStatement getELO = connect().prepareStatement(query1);
+             PreparedStatement getCount = connect().prepareStatement(query2)) {
+            getELO.setString(1, username);
+            getCount.setString(1, username);
+            var result = getELO.executeQuery();
+            result.next();
+            JSONObject jResObj = new JSONObject();
+            jResObj.put(result.getMetaData().getColumnLabel(1).toLowerCase(), result.getObject(1));
+            result = getCount.executeQuery();
+            Integer pushupCount = 0;
+            while (result.next()) {
+                pushupCount += result.getInt("count");
             }
+            jResObj.put("Push-Up count", pushupCount);
+            connect().close();
+            return MessageHandler.createHttpResponseMessage("200", jResObj.toJSONString());
+        } catch (SQLException | ClassNotFoundException throwables) {
+            throwables.printStackTrace();
         }
         return MessageHandler.badRequest();
     }
 
-    public static List<Map.Entry<String, int[]>> getScoreBoard() {
+    public static JSONArray getScoreBoard() {
         //return: Username, [ELO, PushUps]
         String query1 = "select username, elo, from users";
         String query2 = "select sum(count) from users";
@@ -159,13 +169,15 @@ public class DBConnection {
                 obj.put(result.getMetaData().getColumnLabel(1).toLowerCase(), result.getObject(1));
                 jsonArray.add(obj);
             }
+            connect().close();
+            return jsonArray;
         } catch (SQLException | ClassNotFoundException throwables) {
             throwables.printStackTrace();
         }
         return null;
     }
 
-    public static List<int[]> getUserHistory(String username) {
+    public static JSONArray getUserHistory(String username) {
         //return format [pushups, duration]
         return null;
     }

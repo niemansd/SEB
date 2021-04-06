@@ -5,7 +5,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.util.List;
-import java.util.Map;
 
 public class RequestHandler {
     //private String requestUser = null;
@@ -19,15 +18,16 @@ public class RequestHandler {
     private BattleGrounds arena;
     private String response = "";
 
+    LoginHandler loginHandler;
+
     private JSONParser parser = new JSONParser();
 
-    RequestHandler(String rType, String rPath, String rContent, BattleGrounds mainArena) {
+    RequestHandler(String rType, String rPath, String rContent, BattleGrounds mainArena, LoginHandler loginHandler) {
         this.requestType = rType.trim();
-        //this.contentType = cType.trim();
         this.requestPath = rPath.trim();
         this.requestContent = rContent.trim();
-        //this.authorisation = rAuth.trim();
         this.arena = mainArena;
+        this.loginHandler = loginHandler;
     }
 
     public String work() {
@@ -62,7 +62,7 @@ public class RequestHandler {
             if (contentType.equalsIgnoreCase("application/json")) {
                 //add user in database + create response
                 assert jsonObj != null;
-                if (DBConnection.addUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString())) {
+                if (DBHandler.addUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString()) != 0) {
                     response = MessageHandler.createHttpResponseMessage("201", jsonObj.get("Username") + " added.");
                 } else {
                     response = MessageHandler.badRequest();
@@ -76,7 +76,7 @@ public class RequestHandler {
             if (contentType.equalsIgnoreCase("application/json")) {
                 //add user in database + create response
                 assert jsonObj != null;
-                if (DBConnection.loginUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString())) {
+                if (loginHandler.loginUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString())) {
                     //eventuell token zurückgeben
                     response = MessageHandler.createHttpResponseMessage("200", jsonObj.get("Username") + " login success.");
                 } else {
@@ -89,8 +89,8 @@ public class RequestHandler {
         //add entry
         else if (requestPath.equalsIgnoreCase("/history")) {
             //check authorisation Authorization: Basic kienboec-sebToken
-            if (authorisation.startsWith("Basic ") && authorisation.endsWith("sebToken")) {
-                String username = authorisation.replace("Basic", "").replace("-sebToken", "").trim();
+            if (loginHandler.getAuthStatus(authorisation)) {
+                String username = loginHandler.getAuthorizedUser(authorisation);
                 if (contentType.equalsIgnoreCase("application/json")) {
                     //add user in database + create response
                     assert jsonObj != null;
@@ -98,7 +98,7 @@ public class RequestHandler {
                     //String exerciseType = (String) jsonObj.get("Name");
                     Integer count = (Integer) jsonObj.get("Count");
                     Integer duration = (Integer) jsonObj.get("DurationInSeconds");
-                    if (DBConnection.addPushups(username, count, duration)) {
+                    if (DBHandler.addPushups(username, count, duration)) {
                         response = MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {
                         response = MessageHandler.badRequest();
@@ -117,10 +117,9 @@ public class RequestHandler {
         if (requestPath.toLowerCase().startsWith("/users")) {
             String username = requestPath.replace("/users/", "");
             //check authorisation "Authorization: Basic kienboec-sebToken"
-            String token = "Basic " + username + "-sebToken";
-            if (this.authorisation.trim().equals(token.trim())) {
+            if (username == loginHandler.getAuthorizedUser(authorisation)) {
                 //DB-Abfrage und Antwort
-                response = MessageHandler.createHttpResponseMessage("200", DBConnection.getUser(username));
+                response = MessageHandler.createHttpResponseMessage("200", DBHandler.getUser(username));
             } else {
                 response = MessageHandler.badRequest();
             }
@@ -129,26 +128,22 @@ public class RequestHandler {
         else if (requestPath.equalsIgnoreCase("/stats")) {
             //GET http://localhost:10001/stats --header "Authorization: Basic kienboec-sebToken"
             //get username from token:
-            String username = authorisation.replace("Basic", "").replace("-sebToken", "").trim();
-            //DB Abfrage: elo, total pushups
-            response = DBConnection.getUserStats(username);
+            if (loginHandler.getAuthStatus(authorisation)) {
+                String username = loginHandler.getAuthorizedUser(authorisation);
+                //DB Abfrage: elo, total pushups
+                response = DBHandler.getUserStats(username);
+            } else response = MessageHandler.badRequest();
         }
         //get scoreboard of all users
         else if (requestPath.equalsIgnoreCase("/score")) {
             //GET http://localhost:10001/score --header "Authorization: Basic kienboec-sebToken"
             //todo check Auth-Token
+
             //return scoreboard
             JSONArray scoreBoard = new JSONArray();
-            List<Map.Entry<String, int[]>> scores = DBConnection.getScoreBoard();
-            assert scores != null;
-            for (Map.Entry<String, int[]> score : scores
-            ) {
-                JSONObject jEntry = new JSONObject();
-                jEntry.put("Username", score.getKey());
-                var values = score.getValue();
-                jEntry.put("ELO", values[0]);
-                jEntry.put("Push-Ups", values[1]);
-                scoreBoard.add(jEntry);
+            JSONArray scores = DBHandler.getScoreBoard();
+            if (scores != null) {
+                scoreBoard = scores;
             }
             response = scoreBoard.toJSONString();
         }
@@ -156,22 +151,22 @@ public class RequestHandler {
         else if (requestPath.equalsIgnoreCase("/history")) {
             //GET http://localhost:10001/history --header "Authorization: Basic kienboec-sebToken"
             //todo check Auth-Token
-            String username = authorisation.replace("Basic", "").replace("-sebToken", "").trim();
+            String username = loginHandler.getAuthorizedUser(authorisation);
             JSONArray history = new JSONArray();
-            List<int[]> entries = DBConnection.getUserHistory(username);
-            assert entries != null;
-            for (int[] entry : entries) {
-                JSONObject jEntry = new JSONObject();
-                jEntry.put("Push-Ups", entry[0]);
-                jEntry.put("duration", entry[1]);
-                history.add(jEntry);
+            List<int[]> entries = DBHandler.getUserHistory(username);
+            if (entries != null) {
+                for (int[] entry : entries) {
+                    JSONObject jEntry = new JSONObject();
+                    jEntry.put("Push-Ups", entry[0]);
+                    jEntry.put("duration", entry[1]);
+                    history.add(jEntry);
+                }
             }
             response = history.toJSONString();
         }
         //get tournament status
-        else if (requestPath.equalsIgnoreCase("/tournament")) {
+        else if (requestPath.equalsIgnoreCase("/tournament") && loginHandler.getAuthStatus(authorisation)) {
             //GET http://localhost:10001/tournament --header "Authorization: Basic kienboec-sebToken"
-            //todo check Token
             //needs BattleGrounds
             response = MessageHandler.createHttpResponseMessage("200", arena.getStatus());
         } else {
@@ -184,14 +179,13 @@ public class RequestHandler {
         if (requestPath.toLowerCase().startsWith("/users")) {
             //PUT http://localhost:10001/users/kienboec --header "Content-Type: application/json" --header "Authorization: Basic kienboec-sebToken"
             // -d "{\"Name\": \"Kienboeck\",  \"Bio\": \"me playin...\", \"Image\": \":-)\"}"
-            JSONObject jsonObj = null;
+            JSONObject jsonObj = new JSONObject();
             try {
                 jsonObj = (JSONObject) parser.parse(requestContent);
             } catch (ParseException e) {
                 response = MessageHandler.badRequest();
             }
-            assert jsonObj != null;
-            if (DBConnection.changeProfile(jsonObj.get("Name").toString(), jsonObj.get("Bio").toString(), jsonObj.get("Image").toString())) {
+            if (DBHandler.changeProfile(loginHandler.getAuthorizedUser(authorisation), jsonObj.get("Name").toString(), jsonObj.get("Bio").toString(), jsonObj.get("Image").toString())) {
                 response = MessageHandler.createHttpResponseMessage("200");
             }
         } else {

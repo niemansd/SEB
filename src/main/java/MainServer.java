@@ -9,6 +9,7 @@ public class MainServer implements Runnable {
     //arena für Kampfaustragung
     private static final BattleGrounds arena = new BattleGrounds();
     //todo user logedin for Auth-Token
+    private static final LoginHandler loginHandler = new LoginHandler();
 
     public MainServer() {
     }
@@ -49,7 +50,7 @@ public class MainServer implements Runnable {
                     }
                     System.out.println("Content:\n" + content + "\ncontent end");
                     RequestHandler requestHandler = new RequestHandler(requestHeader.getMethod(),
-                            requestHeader.getPath(), content.toString(), arena);
+                            requestHeader.getPath(), content.toString(), arena, loginHandler);
                     if (requestHeader.getKeyMap().containsKey("authorization")) {
                         requestHandler.setAuthorisation(requestHeader.getKeyMap().get("authorization"));
                     }
@@ -65,6 +66,8 @@ public class MainServer implements Runnable {
                 System.out.println("");
                 writer.write(response);
                 writer.flush();
+                reader.close();
+                writer.close();
 
             }
         } catch (Exception e) {
