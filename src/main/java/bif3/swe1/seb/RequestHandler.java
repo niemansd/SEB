@@ -98,6 +98,7 @@ public class RequestHandler {
                     Long count = (Long) jsonObj.get("Count");
                     Long duration = (Long) jsonObj.get("DurationInSeconds");
                     if (bif3.swe1.seb.DBHandler.addPushups(username, count, duration) != 0) {
+                        arena.addPushups(username, count.intValue());
                         response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201 CREATED", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {
                         response = bif3.swe1.seb.MessageHandler.badRequest();
