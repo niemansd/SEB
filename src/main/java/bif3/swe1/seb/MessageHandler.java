@@ -13,10 +13,14 @@ public class MessageHandler {
     }
 
     public static String createHttpResponseMessage(String httpCode, String payload) {
+        return createHttpResponseMessage(httpCode, payload, "text/plain");
+    }
+
+    public static String createHttpResponseMessage(String httpCode, String payload, String contentType) {
         byte[] s = payload.getBytes(StandardCharsets.UTF_8);
         return "HTTP/1.1 " + httpCode + "\r\n"
                 + "Server: Kiste\r\n"
-                + "Content-Type: text/plain\r\n"
+                + "Content-Type: " + contentType + "\r\n"
                 + "Accept-Ranges: bytes\r\n"
                 + "Content-Length: " + s.length + "\r\n\r\n"
                 + payload;

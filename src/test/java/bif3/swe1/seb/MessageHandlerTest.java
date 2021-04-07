@@ -9,7 +9,7 @@ class MessageHandlerTest {
     String standardResponseFirst = "HTTP/1.1 ";
     String standardRespnseRest = "Server: Kiste\r\n"
             + "Content-Type: text/plain\r\n"
-            + "Accept-Ranges: bytes \r\n"
+            + "Accept-Ranges: bytes\r\n"
             + "Content-Length: ";
     String headerEnd = "\r\n\r\n";
     String code200 = "200 OK";

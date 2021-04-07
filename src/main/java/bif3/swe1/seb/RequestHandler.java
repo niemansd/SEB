@@ -8,18 +8,18 @@ import org.json.simple.parser.ParseException;
 
 public class RequestHandler {
     //private String requestUser = null;
-    private String requestType = "";
+    private final String requestType;
     @Setter
     private String contentType = "";
-    private String requestPath = "";
-    private String requestContent = "";
+    private final String requestPath;
+    private final String requestContent;
     @Setter
     private String authorisation = "";
-    private bif3.swe1.seb.BattleGrounds arena;
+    private final bif3.swe1.seb.BattleGrounds arena;
     private String response = "";
-    private bif3.swe1.seb.LoginHandler loginHandler;
+    private final bif3.swe1.seb.LoginHandler loginHandler;
 
-    private JSONParser parser = new JSONParser();
+    private final JSONParser parser = new JSONParser();
 
     RequestHandler(String rType, String rPath, String rContent, bif3.swe1.seb.BattleGrounds mainArena, bif3.swe1.seb.LoginHandler loginHandler) {
         this.requestType = rType.trim();
@@ -62,7 +62,7 @@ public class RequestHandler {
                 //add user in database + create response
                 assert jsonObj != null;
                 if (bif3.swe1.seb.DBHandler.addUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString()) != 0) {
-                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201", jsonObj.get("Username") + " added.");
+                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201 CREATED", jsonObj.get("Username") + " added.");
                 } else {
                     response = bif3.swe1.seb.MessageHandler.badRequest();
                 }
@@ -77,7 +77,7 @@ public class RequestHandler {
                 assert jsonObj != null;
                 if (loginHandler.loginUser(jsonObj.get("Username").toString(), jsonObj.get("Password").toString())) {
                     //eventuell token zurückgeben
-                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", jsonObj.get("Username") + " login success.");
+                    response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200 OK", jsonObj.get("Username") + " login success.");
                 } else {
                     response = bif3.swe1.seb.MessageHandler.badRequest();
                 }
@@ -98,7 +98,7 @@ public class RequestHandler {
                     Long count = (Long) jsonObj.get("Count");
                     Long duration = (Long) jsonObj.get("DurationInSeconds");
                     if (bif3.swe1.seb.DBHandler.addPushups(username, count, duration) != 0) {
-                        response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201", username + " did " + count + " push-ups in " + duration + " seconds.");
+                        response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("201 CREATED", username + " did " + count + " push-ups in " + duration + " seconds.");
                     } else {
                         response = bif3.swe1.seb.MessageHandler.badRequest();
                     }
@@ -116,9 +116,9 @@ public class RequestHandler {
         if (requestPath.toLowerCase().startsWith("/users")) {
             String username = requestPath.replace("/users/", "");
             //check authorisation "Authorization: Basic kienboec-sebToken"
-            if (username == loginHandler.getAuthorizedUser(authorisation)) {
+            if (username.equals(loginHandler.getAuthorizedUser(authorisation))) {
                 //DB-Abfrage und Antwort
-                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", bif3.swe1.seb.DBHandler.getUser(username));
+                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200 OK", bif3.swe1.seb.DBHandler.getUser(username));
             } else {
                 response = bif3.swe1.seb.MessageHandler.badRequest();
             }
@@ -144,22 +144,21 @@ public class RequestHandler {
             if (scores != null) {
                 scoreBoard = scores;
             }
-            response = scoreBoard.toJSONString();
+            response = MessageHandler.createHttpResponseMessage("200 OK", scoreBoard.toJSONString(), "application/json");
         }
         //get count and duration of entries
         else if (requestPath.equalsIgnoreCase("/history")) {
             //GET http://localhost:10001/history --header "Authorization: Basic kienboec-sebToken"
             //todo check Auth-Token
             String username = loginHandler.getAuthorizedUser(authorisation);
-            JSONArray history = new JSONArray();
-            history = bif3.swe1.seb.DBHandler.getUserHistory(username);
-            response = history.toJSONString();
+            JSONArray history = DBHandler.getUserHistory(username);
+            response = MessageHandler.createHttpResponseMessage("200 OK" ,history.toJSONString(), "application/json");
         }
         //get tournament status
         else if (requestPath.equalsIgnoreCase("/tournament") && loginHandler.getAuthStatus(authorisation)) {
             //GET http://localhost:10001/tournament --header "Authorization: Basic kienboec-sebToken"
             //needs BattleGrounds
-            response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200", arena.getStatus());
+            response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200 OK", arena.getStatus());
         } else {
             response = bif3.swe1.seb.MessageHandler.badRequest();
         }
@@ -177,7 +176,7 @@ public class RequestHandler {
                 response = bif3.swe1.seb.MessageHandler.badRequest();
             }
             if (bif3.swe1.seb.DBHandler.changeProfile(loginHandler.getAuthorizedUser(authorisation), jsonObj.get("Name").toString(), jsonObj.get("Bio").toString(), jsonObj.get("Image").toString())) {
-                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200");
+                response = bif3.swe1.seb.MessageHandler.createHttpResponseMessage("200 OK");
             }
         } else {
             response = bif3.swe1.seb.MessageHandler.badRequest();

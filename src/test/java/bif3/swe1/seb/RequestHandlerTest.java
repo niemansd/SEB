@@ -35,7 +35,7 @@ class RequestHandlerTest {
         testHandler.setContentType("application/json");
         try (MockedStatic<DBHandler> mock = Mockito.mockStatic(DBHandler.class)) {
             try (MockedStatic<MessageHandler> mockMSG = Mockito.mockStatic(MessageHandler.class)) {
-                mockMSG.when(() -> MessageHandler.createHttpResponseMessage("201", "tester added.")).thenReturn("success");
+                mockMSG.when(() -> MessageHandler.createHttpResponseMessage("201 CREATED", "tester added.")).thenReturn("success");
                 mock.when(() -> DBHandler.addUser("tester", "12345")).thenReturn(1);
                 //Act
                 String testOutput = testHandler.work();
@@ -75,18 +75,18 @@ class RequestHandlerTest {
 //        }
 //    }
 
-    //Get User Data
-    @Test
-    void getUserDataTest() {
-    }
-
-    //Get Statistics
-    @Test
-    void getUserStats() {
-    }
-
-    //Get Tournament Info
-    @Test
-    void getTournamentInfo() {
-    }
+//    //Get User Data
+//    @Test
+//    void getUserDataTest() {
+//    }
+//
+//    //Get Statistics
+//    @Test
+//    void getUserStats() {
+//    }
+//
+//    //Get Tournament Info
+//    @Test
+//    void getTournamentInfo() {
+//    }
 }

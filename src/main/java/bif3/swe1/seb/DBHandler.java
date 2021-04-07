@@ -108,7 +108,7 @@ public class DBHandler {
                     jResObj.put(result.getMetaData().getColumnLabel(i + 1).toLowerCase(), result.getObject(i + 1));
                 }
                 connect().close();
-                return MessageHandler.createHttpResponseMessage("200", jResObj.toJSONString());
+                return MessageHandler.createHttpResponseMessage("200 OK", jResObj.toJSONString(), "applicaton/json");
             } catch (SQLException | ClassNotFoundException throwables) {
                 throwables.printStackTrace();
             }
@@ -195,7 +195,7 @@ public class DBHandler {
             }
             jResObj.put("Push-Up count", pushupCount);
             connect().close();
-            return MessageHandler.createHttpResponseMessage("200", jResObj.toJSONString());
+            return MessageHandler.createHttpResponseMessage("200 OK", jResObj.toJSONString(), "application/json");
         } catch (SQLException | ClassNotFoundException throwables) {
             throwables.printStackTrace();
         }
